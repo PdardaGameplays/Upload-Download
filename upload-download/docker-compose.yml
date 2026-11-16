@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: upload_download_api
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-defina-uma-chave-secreta-no-env}
+      - MAX_CONTENT_LENGTH_MB=${MAX_CONTENT_LENGTH_MB:-16}
+      - ALLOWED_EXTENSIONS=${ALLOWED_EXTENSIONS:-png,jpg,jpeg,gif,pdf,txt}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_TO_STDOUT=true
+      - UPLOAD_FOLDER=/app/uploads
+      - DATABASE_PATH=/app/data/database.db
+    volumes:
+      # Persistência dos arquivos enviados e do banco de dados SQLite
+      - uploads_storage:/app/uploads
+      - database_storage:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+
+volumes:
+  uploads_storage:
+    name: uploads_storage_volume
+  database_storage:
+    name: database_storage_volume
+
